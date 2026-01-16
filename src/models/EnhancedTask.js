@@ -174,6 +174,41 @@ class EnhancedTask {
         }
     }
     
+    /**
+     * Get available categories (static method)
+     * @returns {string[]} - Array of valid categories
+     */
+    static getAvailableCategories() {
+        return ['work', 'personal', 'study', 'health', 'finance', 'shopping', 'other'];
+    }
+
+    /**
+     * Get category display name
+     * @returns {string} - Formatted category name
+     */
+    getCategoryDisplayName() {
+        const categoryNames = {
+            'work': 'Work & Business',
+            'personal': 'Personal',
+            'study': 'Study & Learning',
+            'health': 'Health & Fitness',
+            'finance': 'Finance & Money',
+            'shopping': 'Shopping',
+            'other': 'Other'
+        };
+        
+        return categoryNames[this._category] || this._category;
+    }
+
+    /**
+     * Check if task belongs to specific category
+     * @param {string} category - Category to check
+     * @returns {boolean} - True if task is in category
+     */
+    isInCategory(category) {
+        return this._category === category;
+    }
+    
     // Convert ke JSON untuk penyimpanan
     toJSON() {
         return {
