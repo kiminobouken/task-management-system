@@ -1,8 +1,6 @@
 {
-  "version": 2,
   "rewrites": [
     { "source": "/src/(.*)", "destination": "/src/$1" },
-    { "source": "/styles.css", "destination": "/public/styles.css" },
     { "source": "/", "destination": "/public/index.html" },
     { "source": "/(.*)", "destination": "/public/$1" }
   ],
@@ -10,10 +8,7 @@
     {
       "source": "/src/(.*\\.js)",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     }
   ]
