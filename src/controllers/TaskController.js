@@ -368,7 +368,6 @@ class TaskController {
     
     /**
      * Get task statistics
-     * @returns {Object} - Response dengan statistik task
      */
     getTaskStats() {
         try {
@@ -395,10 +394,11 @@ class TaskController {
     }
     
     /**
-     * Get overdue tasks
-     * @returns {Object} - Response dengan task yang overdue
+     * Get tasks by category
+     * @param {string} category - Category to filter by
+     * @returns {Object} - Response dengan filtered tasks
      */
-    getOverdueTasks() {
+    getTasksByCategory(category) {
         try {
             if (!this.currentUser) {
                 return {
@@ -407,13 +407,28 @@ class TaskController {
                 };
             }
             
-            const overdueTasks = this.taskRepository.findOverdue()
-                .filter(task => task.ownerId === this.currentUser.id || task.assigneeId === this.currentUser.id);
+            // Validate category
+            const validCategories = EnhancedTask.getAvailableCategories();
+            if (!validCategories.includes(category)) {
+                return {
+                    success: false,
+                    error: 'Kategori tidak valid'
+                };
+            }
+            
+            // Get user's tasks in specific category
+            const userTasks = this.taskRepository.findByOwner(this.currentUser.id);
+            const categoryTasks = userTasks.filter(task => task.isInCategory(category));
+            
+            // Sort by priority and due date
+            const sortedTasks = this.taskRepository.sort(categoryTasks, 'priority', 'desc');
             
             return {
                 success: true,
-                data: overdueTasks,
-                count: overdueTasks.length
+                data: sortedTasks,
+                count: sortedTasks.length,
+                category: category,
+                categoryDisplayName: EnhancedTask.prototype.getCategoryDisplayName.call({ _category: category })
             };
             
         } catch (error) {
@@ -425,11 +440,10 @@ class TaskController {
     }
     
     /**
-     * Get tasks due soon
-     * @param {number} days - Jumlah hari ke depan
-     * @returns {Object} - Response dengan task yang akan due
+     * Get category statistics for current user
+     * @returns {Object} - Response dengan category statistics
      */
-    getTasksDueSoon(days = 3) {
+    getCategoryStats() {
         try {
             if (!this.currentUser) {
                 return {
@@ -438,13 +452,16 @@ class TaskController {
                 };
             }
             
-            const dueSoonTasks = this.taskRepository.findDueSoon(days)
-                .filter(task => task.ownerId === this.currentUser.id || task.assigneeId === this.currentUser.id);
+            const stats = this.taskRepository.getCategoryStats(this.currentUser.id);
+            const mostUsed = this.taskRepository.getMostUsedCategories(this.currentUser.id);
             
             return {
                 success: true,
-                data: dueSoonTasks,
-                count: dueSoonTasks.length
+                data: {
+                    byCategory: stats,
+                    mostUsed: mostUsed,
+                    totalCategories: Object.keys(stats).filter(cat => stats[cat].total > 0).length
+                }
             };
             
         } catch (error) {
@@ -453,6 +470,94 @@ class TaskController {
                 error: error.message
             };
         }
+    }
+    
+    /**
+     * Update task category
+     * @param {string} taskId - Task ID
+     * @param {string} newCategory - New category
+     * @returns {Object} - Response dengan updated task
+     */
+    updateTaskCategory(taskId, newCategory) {
+        try {
+            if (!this.currentUser) {
+                return {
+                    success: false,
+                    error: 'User harus login terlebih dahulu'
+                };
+            }
+            
+            const task = this.taskRepository.findById(taskId);
+            
+            if (!task) {
+                return {
+                    success: false,
+                    error: 'Task tidak ditemukan'
+                };
+            }
+            
+            // Check permission
+            if (task.ownerId !== this.currentUser.id) {
+                return {
+                    success: false,
+                    error: 'Hanya owner yang bisa mengubah kategori task'
+                };
+            }
+            
+            // Validate category
+            const validCategories = EnhancedTask.getAvailableCategories();
+            if (!validCategories.includes(newCategory)) {
+                return {
+                    success: false,
+                    error: 'Kategori tidak valid'
+                };
+            }
+            
+            // Update category
+            const updatedTask = this.taskRepository.update(taskId, { category: newCategory });
+            
+            return {
+                success: true,
+                data: updatedTask,
+                message: `Kategori task berhasil diubah ke ${EnhancedTask.prototype.getCategoryDisplayName.call({ _category: newCategory })}`
+            };
+            
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Get available categories
+     * @returns {Object} - Response dengan available categories
+     */
+    getAvailableCategories() {
+        try {
+            const categories = EnhancedTask.getAvailableCategories();
+            const categoriesWithDisplay = categories.map(category => ({
+                value: category,
+                label: EnhancedTask.prototype.getCategoryDisplayName.call({ _category: category })
+            }));
+            
+            return {
+                success: true,
+                data: categoriesWithDisplay
+            };
+            
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Private methods
+    _validateTaskOwnership(taskId) {
+        // ...existing code...
     }
 }
 
