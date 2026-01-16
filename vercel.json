@@ -1,24 +1,16 @@
 {
   "version": 2,
+  "rewrites": [
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ],
   "routes": [
     {
-      "src": "/src/(.*)",
+      "src": "/src/(.*\\.js)",
       "dest": "/src/$1",
       "headers": {
         "Content-Type": "application/javascript; charset=utf-8"
       }
-    },
-    {
-      "src": "/public/(.*)",
-      "dest": "/public/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|html|json))",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/index.html"
     }
   ]
 }
